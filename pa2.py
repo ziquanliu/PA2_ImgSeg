@@ -8,8 +8,8 @@ def rgb2ycbcr(img):
     img should be np.ndarray with dtype = uint8
     value range(img) = [0,255]
     """
-    oriT = np.asarray([65.481, 128.553, 24.966, \
-            -37.797, -74.203, 112, \
+    oriT = np.asarray([65.481, 128.553, 24.966,
+            -37.797, -74.203, 112,
             112, -93.786, -18.214]).reshape((3,3),order='C')/255
     offset = [16, 128, 128]
     img = np.minimum(img, 255)
@@ -60,11 +60,14 @@ def getfeatures(img, stepsize, follow_matlab = True):
         raise Exception('only uint8 image color are supported')
     yimg = np.require(rgb2ycbcr(img), dtype=np.float64)
     sy,sx, sc = img.shape
+    #print sy
+    #print sx
+    #print sc
     offset = np.floor((winsize-1)/2)
     rangex = range(0, (sx-winsize+1) , stepsize)
     rangey = range(0, (sy-winsize+1) , stepsize)
     win_max = winsize 
-    X = np.zeros((4, len(rangex) * len(rangey)), dtype=np.float64);
+    X = np.zeros((4, len(rangex) * len(rangey)), dtype=np.float64)
     i = 0
     # to compesate the fact that python is 0-index
     py2mat_constant = 1 if follow_matlab else 0
@@ -72,13 +75,13 @@ def getfeatures(img, stepsize, follow_matlab = True):
         for y in rangey:
             myIu = yimg[y:y+win_max,x:x+win_max,1]
             myIv = yimg[y:y+win_max,x:x+win_max,2]
-            X[:,i] = [np.mean(myIu.flatten()), \
-                      np.mean(myIv.flatten()), \
-                      y + offset + py2mat_constant, \
+            X[:,i] = [np.mean(myIu.flatten()),
+                      np.mean(myIv.flatten()),
+                      y + offset + py2mat_constant,
                       x + offset + py2mat_constant
                       ]
             i = i + 1 
-    L = {'rangex':rangex, 'rangey':rangey, 'offset':offset, 'sx':sx, 'sy':sy, \
+    L = {'rangex':rangex, 'rangey':rangey, 'offset':offset, 'sx':sx, 'sy':sy,
          'stepsize':stepsize, 'winsize':winsize, 'follow_matlab':follow_matlab}
     return X, L
 

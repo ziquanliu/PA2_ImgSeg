@@ -11,14 +11,14 @@
 import pa2
 import numpy as np
 import pylab as pl
-import Image
+from PIL import Image
 import scipy.io as sio
 
 def demo():
     import scipy.cluster.vq as vq
 
     ## load and show image
-    img = Image.open('images/12003.jpg')
+    img = Image.open('PA2-cluster-images/images/12003.jpg')
     pl.subplot(1,3,1)
     pl.imshow(img)
     
@@ -26,7 +26,9 @@ def demo():
     X,L = pa2.getfeatures(img, 7)
 
     ## Call kmeans function in scipy.  You need to write this yourself!
-    C,Y = vq.kmeans2(vq.whiten(X.T), 2, iter=1000, minit='random')
+    C,Y = vq.kmeans2(vq.whiten(X.T), 3, iter=2000, minit='random')
+    print C
+    print Y
     Y = Y + 1 # Use matlab 1-index labeling
     ## 
 
