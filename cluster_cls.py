@@ -27,6 +27,11 @@ def cal_log_gaussian(x,miu,Cov):
     right=-(x-miu).transpose().dot(np.linalg.inv(Cov)).dot(x-miu)/2.0
     return left+right
 
+def cal_kernel(x,x_old,h_c,h_p):
+    left = -np.sum(np.square(x[0:2] - x_old[0:2]))*0.5/float(h_c**2)
+    right = -np.sum(np.square(x[2:4] - x_old[2:4]))*0.5/float(h_p**2)
+    return np.exp(left+right)
+
 
 
 
@@ -100,13 +105,28 @@ def update_mean(x_old,DS,Sigma):
         denom+=g_kern
     return nominator/denom
 
+def update_mean_img(x_old,DS,h_c,h_p):
+    nominator=np.zeros(x_old.shape)
+    denom=0.0
+    num_DS=DS.shape[1]
+    dim=DS.shape[0]
+    for i in range(num_DS):
+        g_kern=cal_kernel(DS[:,i].reshape(dim,1),x_old,h_c,h_p)
+        nominator+=(DS[:,i].reshape(dim,1))*g_kern
+        denom+=g_kern
+    return nominator/denom
+
 
 def ms_find_cluster(h,X_Mean,X):
     dim = X.shape[0]
     num = X.shape[1]
     cluster_cen = [X_Mean[:, 0].reshape((dim, 1))]
-    MIN_MEAN_DEV = h
+    if isinstance(h,np.ndarray):
+        MIN_MEAN_DEV = np.sum(h)/2.0
+    else:
+        MIN_MEAN_DEV=h
     num_cen = 1
+    print num
     for i in range(num):
         temp = np.zeros((num_cen, 1))
         for j in range(num_cen):
@@ -114,6 +134,7 @@ def ms_find_cluster(h,X_Mean,X):
         if np.min(temp) > MIN_MEAN_DEV:
             cluster_cen.append(X_Mean[:, i].reshape((dim, 1)))
             num_cen += 1
+        print num_cen
 
     z = np.zeros((num, num_cen))
     for i in range(num):
@@ -291,8 +312,6 @@ class imgseg_cluster(cluster):
     def __init__(self,X,K,l_type,true_label,lambdakm,hp,hc):
         cluster.__init__(self,X,K,l_type,true_label)
         self.lambda_km=lambdakm
-        self.h_p=hp
-        self.h_c=hc
 
 
     def K_means(self):
@@ -347,6 +366,41 @@ class imgseg_cluster(cluster):
             Y[i,0]=np.argmax(z[i,:])+1
         print 'This is imgseg k-means'
         return Y, miu
+
+
+
+    def mean_shift(self,h):
+        dim = self.X.shape[0]
+        num = self.X.shape[1]
+        print num
+        h_c=h[0,0]
+        h_p=h[1,0]
+        shift_ind = np.ones((1, num))
+        MIN_RES = 10 ** -10
+        x_mean = self.X.copy()
+        iter_num = 0
+        while np.sum(shift_ind) > 0:
+            print 'iteration number', iter_num
+            iter_num += 1
+            for i in range(num):
+                if shift_ind[:, i] == 0: continue
+                x_old = x_mean[:, i].reshape(dim, 1)
+                x_new = update_mean_img(x_old, self.X, h_c,h_p)
+                if np.sum(np.abs(x_old - x_new)) < MIN_RES:
+                    shift_ind[:, i] = 0
+                else:
+                    x_mean[:, i] = x_new.reshape((dim))
+            if iter_num > 10 ** 4:
+                break
+            print shift_ind
+
+        z, K, clst_mean= ms_find_cluster(h, x_mean, self.X)
+        print 'Number of clusters is ', K
+        Y=np.zeros((num,1))
+        for i in range(num):
+            Y[i,0]=np.argmax(z[i,:])+1
+        print 'This is imgseg mean shift'
+        return Y,clst_mean
 
 
 
