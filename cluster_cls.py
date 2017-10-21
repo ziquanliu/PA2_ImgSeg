@@ -1,8 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-import time
+import ctypes
+from ctypes import cdll
 import pickle
+mydll=cdll.LoadLibrary('cal_kernel.so')
+cal_k=mydll.cal_kernel
+cal_k.restype=ctypes.c_double
 
 
 def k_mean_dist(x,mean_value,lambda_km):
@@ -111,7 +115,9 @@ def update_mean_img(x_old,DS,h_c,h_p):
     num_DS=DS.shape[1]
     dim=DS.shape[0]
     for i in range(num_DS):
-        g_kern=cal_kernel(DS[:,i].reshape(dim,1),x_old,h_c,h_p)
+        g_kern=cal_kernel(DS[:,i].reshape(dim,1).ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                          x_old.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),ctypes.c_double(h_c),
+                          ctypes.c_double(h_p))
         nominator+=(DS[:,i].reshape(dim,1))*g_kern
         denom+=g_kern
     return nominator/denom
