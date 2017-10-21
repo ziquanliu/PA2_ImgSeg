@@ -11,8 +11,8 @@ X,L=fea_ex.getfeatures(img,7)
 
 K=4
 lambda_km=0.5
-hp=20
-hc=10
+hp=20.0
+hc=10.0
 h=np.array([[hp],[hc]])
 cluster=clst.imgseg_cluster(X,K,0,0,lambda_km,hp,hc)
 #Y_km,C_km=cluster.K_means()
