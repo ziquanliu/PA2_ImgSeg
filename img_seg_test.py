@@ -28,3 +28,4 @@ pl.subplot(1, 2, 2)
 pl.imshow(csegm)
 pl.savefig('mean_shift.eps')
 pl.show()
+
