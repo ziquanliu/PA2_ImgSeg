@@ -1,5 +1,6 @@
 #include<math.h>
-#define E 2.718281823
+#include<stdio.h>
+double E=2.718281823;
 double cal_kernel(double* x,double* x_old,double hp,double hc){
   double left_t,left;
   double right_t,right;

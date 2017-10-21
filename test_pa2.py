@@ -26,11 +26,14 @@ def demo():
     X,L = pa2.getfeatures(img, 7)
 
     ## Call kmeans function in scipy.  You need to write this yourself!
-    C,Y = vq.kmeans2(vq.whiten(X.T), 3, iter=2000, minit='random')
+    C,Y = vq.kmeans2(vq.whiten(X.T), 4, iter=2000, minit='random')
     print C
     print Y
     Y = Y + 1 # Use matlab 1-index labeling
-    ## 
+    ##
+    num=Y.shape[0]
+    for i in range(num):
+        print Y[i]
 
     # make segmentation image from labels
     segm = pa2.labels2seg(Y,L)

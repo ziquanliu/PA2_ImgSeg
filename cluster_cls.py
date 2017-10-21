@@ -4,6 +4,7 @@ import copy
 import ctypes
 from ctypes import cdll
 import pickle
+import time
 mydll=cdll.LoadLibrary('cal_kernel.so')
 cal_k=mydll.cal_kernel
 cal_k.restype=ctypes.c_double
@@ -111,16 +112,23 @@ def update_mean(x_old,DS,Sigma):
 
 def update_mean_img(x_old,DS,h_c,h_p):
     nominator=np.zeros(x_old.shape)
+    nominator_comp=nominator.copy()
     denom=0.0
+    denom_comp=0.0
     num_DS=DS.shape[1]
     dim=DS.shape[0]
     for i in range(num_DS):
-        g_kern=cal_kernel(DS[:,i].reshape(dim,1).ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
-                          x_old.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),ctypes.c_double(h_c),
-                          ctypes.c_double(h_p))
-        nominator+=(DS[:,i].reshape(dim,1))*g_kern
-        denom+=g_kern
-    return nominator/denom
+        #g_kern=cal_k(DS[:,i].reshape(dim,1).ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+        #                  x_old.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),ctypes.c_double(h_p),
+        #                  ctypes.c_double(h_c))
+        g_kern_comp=cal_kernel(DS[:,i].reshape(dim,1),x_old,h_c,h_p)
+        #nominator+=(DS[:,i].reshape(dim,1))*g_kern
+        nominator_comp += (DS[:, i].reshape(dim, 1)) * g_kern_comp
+        #denom+=g_kern
+        denom_comp+=g_kern_comp
+    #print nominator/denom-nominator_comp/denom_comp
+    #time.sleep(1)
+    return nominator_comp/denom_comp
 
 
 def ms_find_cluster(h,X_Mean,X):
@@ -267,7 +275,7 @@ class cluster(object):
 
         z = np.zeros((num, self.K))  # initialize z
         resid = 10
-        MIN_RES = 10 ** -10
+        MIN_RES = 10 ** -2
         pi_new = pi.copy()
         miu_new = miu.copy()
         Sigma_new = copy.copy(Sigma)
@@ -298,7 +306,7 @@ class cluster(object):
                 Sigma_new[j] = cal_new_cov(j, N[0, j], z, self.X, miu_new[:, j])
                 # break
             # break
-            resid = np.sum(np.abs(pi - pi_new)) + np.sum(np.abs(miu - miu_new))
+            resid = np.max(np.abs(pi - pi_new)) + np.max(np.abs(miu - miu_new))
             print 'resid', resid
             pi = pi_new.copy()
             miu = miu_new.copy()
@@ -398,17 +406,17 @@ class imgseg_cluster(cluster):
             miu = miu_new.copy()
             z = np.zeros((num, self.K))
             for i in range(num):
-                min_distance = squ_Euc_dist(self.X[:, i], miu[:, 0])
+                min_distance = k_mean_dist(self.X[:, i], miu[:, 0],self.lambda_km)
                 ind = 0
                 for j in range(1, self.K):
-                    distance = squ_Euc_dist(self.X[:, i], miu[:, j])
+                    distance = k_mean_dist(self.X[:, i], miu[:, j],self.lambda_km)
                     if distance < min_distance:
                         min_distance = distance
                         ind = j
                 z[i, ind] = 1
-        Y=np.zeros((num,1))
+        Y=np.zeros((num))
         for i in range(num):
-            Y[i,0]=np.argmax(z[i,:])+1
+            Y[i]=np.argmax(z[i,:])+1
         print 'This is imgseg k-means'
         return Y, miu
 
@@ -425,6 +433,7 @@ class imgseg_cluster(cluster):
         x_mean = self.X.copy()
         iter_num = 0
         while np.sum(shift_ind) > 0:
+            start=time.clock()
             print 'iteration number', iter_num
             iter_num += 1
             for i in range(num):
@@ -438,9 +447,14 @@ class imgseg_cluster(cluster):
             if iter_num > 10 ** 4:
                 break
             print 'unshift',shift_ind.sum()
-
-
+            print 'time used:',(time.clock()-start)
+            if iter_num<100:
+                pickle.dump((time.clock()-start),open('time/time'+str(iter_num)+'.txt','wb'))
+        pickle.dump(x_mean,open('x_mean.txt','wb'))
         z, K, clst_mean= ms_find_cluster_n(h, x_mean, self.X)
+        for i in range(num):
+            print z[i,:]
+
         print 'Number of clusters is ', K
         Y=np.zeros((num,1))
         for i in range(num):
