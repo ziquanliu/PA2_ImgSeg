@@ -134,7 +134,8 @@ def ms_find_cluster(h,X_Mean,X):
         if np.min(temp) > MIN_MEAN_DEV:
             cluster_cen.append(X_Mean[:, i].reshape((dim, 1)))
             num_cen += 1
-        print num_cen
+        print 'number of centers',num_cen
+        if num_cen>10: break
 
     z = np.zeros((num, num_cen))
     for i in range(num):
@@ -146,6 +147,44 @@ def ms_find_cluster(h,X_Mean,X):
     for i in range(num_cen):
         miu[:,i]=cluster_cen[i].reshape((dim,))
     return z,num_cen,miu
+
+def ms_find_cluster_n(h,X_Mean,X):
+    dim = X.shape[0]
+    num = X.shape[1]
+    if isinstance(h,np.ndarray):
+        MIN_MEAN_DEV = np.sum(h)/2.0
+    else:
+        MIN_MEAN_DEV=h
+    num_mean=num
+    num_cen = 0
+    cls_index=[]
+    mean=X_Mean.copy()
+    miu_l=[]
+    for i in range(num_mean):
+        if mean[int(dim * np.random.rand()),i] == 0 and mean[int(dim * np.random.rand()),i] == 0:
+            continue
+        mean_l_ind=[i]
+        miu=mean[:,i].reshape((dim,1))
+        for j in range(num_mean):
+            if i==j: continue
+            if mean[int(dim*np.random.rand()),j]==0 and mean[int(dim*np.random.rand()),j]==0:
+                continue
+            if np.sum(np.absolute(mean[:, j].reshape((dim, 1)) - mean[:, i].reshape((dim, 1))))<MIN_MEAN_DEV:
+                mean_l_ind.append(j)
+                mean[:,j]=np.zeros((dim))
+                miu+=mean[:, j].reshape((dim, 1))
+        miu_l.append(miu/float(len(mean_l_ind)))
+        cls_index.append(mean_l_ind)
+        num_cen+=1
+    z = np.zeros((num, num_cen))
+    print len(cls_index)
+    print num_cen
+    for i in range(num_cen):
+        for j in range(len(cls_index[i])):
+            z[cls_index[i][j],i]=1
+    return z,num_cen,miu_l
+
+
 
 class cluster(object):
     def __init__(self,X,K,l_type,true_label):
@@ -275,7 +314,7 @@ class cluster(object):
         num = self.X.shape[1]
         Sigma = h ** 2 * np.eye(dim, dim)
         shift_ind = np.ones((1, num))
-        MIN_RES = 10 ** -10
+        MIN_RES = 10 ** -2
         x_mean = self.X.copy()
         iter_num = 0
         while np.sum(shift_ind) > 0:
@@ -285,7 +324,7 @@ class cluster(object):
                 if shift_ind[:, i] == 0: continue
                 x_old = x_mean[:, i].reshape(dim, 1)
                 x_new = update_mean(x_old, self.X, Sigma)
-                if np.sum(np.abs(x_old - x_new)) < MIN_RES:
+                if np.max(np.abs(x_old - x_new)) < MIN_RES:
                     shift_ind[:, i] = 0
                 else:
                     x_mean[:, i] = x_new.reshape((dim))
@@ -376,7 +415,7 @@ class imgseg_cluster(cluster):
         h_c=h[0,0]
         h_p=h[1,0]
         shift_ind = np.ones((1, num))
-        MIN_RES = 10 ** -10
+        MIN_RES = 10 ** -2
         x_mean = self.X.copy()
         iter_num = 0
         while np.sum(shift_ind) > 0:
@@ -386,15 +425,16 @@ class imgseg_cluster(cluster):
                 if shift_ind[:, i] == 0: continue
                 x_old = x_mean[:, i].reshape(dim, 1)
                 x_new = update_mean_img(x_old, self.X, h_c,h_p)
-                if np.sum(np.abs(x_old - x_new)) < MIN_RES:
+                if np.max(np.abs(x_old - x_new)) < MIN_RES:
                     shift_ind[:, i] = 0
                 else:
                     x_mean[:, i] = x_new.reshape((dim))
             if iter_num > 10 ** 4:
                 break
-            print shift_ind
+            print 'unshift',shift_ind.sum()
 
-        z, K, clst_mean= ms_find_cluster(h, x_mean, self.X)
+
+        z, K, clst_mean= ms_find_cluster_n(h, x_mean, self.X)
         print 'Number of clusters is ', K
         Y=np.zeros((num,1))
         for i in range(num):
