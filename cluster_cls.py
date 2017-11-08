@@ -5,9 +5,7 @@ import ctypes
 from ctypes import cdll
 import pickle
 import time
-mydll=cdll.LoadLibrary('cal_kernel.so')
-cal_k=mydll.cal_kernel
-cal_k.restype=ctypes.c_double
+
 
 
 def k_mean_dist(x,mean_value,lambda_km):
