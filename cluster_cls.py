@@ -91,7 +91,7 @@ def cluster_plt(line_type,z,X,K,name,x_mean,h=0):
         plt.plot(X_temp[0, :], X_temp[1, :], line_type[j])
     plt.plot(x_mean[0, :], x_mean[1, :], 'kx')
     plt.title(name)
-    plt.savefig(name+'/image/cluster_result_h'+str(h)+'.eps',dpi=300)
+    #plt.savefig(name+'/image/cluster_result_h'+str(h)+'.eps',dpi=300)
     plt.show()
 
 def plt_save(line_type,z,X,K,name,x_mean=None,h=0):
@@ -191,8 +191,6 @@ def ms_find_cluster_n(h,X_Mean,X):
         cls_index.append(mean_l_ind)
         num_cen+=1
     z = np.zeros((num, num_cen))
-    print len(cls_index)
-    print num_cen
     for i in range(num_cen):
         for j in range(len(cls_index[i])):
             z[cls_index[i][j],i]=1
@@ -426,8 +424,8 @@ class imgseg_cluster(cluster):
         dim = self.X.shape[0]
         num = self.X.shape[1]
         print num
-        h_c=h[0,0]
-        h_p=h[1,0]
+        h_c=h[1,0]
+        h_p=h[0,0]
         shift_ind = np.ones((1, num))
         MIN_RES = 10 ** -2
         x_mean = self.X.copy()
@@ -448,12 +446,11 @@ class imgseg_cluster(cluster):
                 break
             print 'unshift',shift_ind.sum()
             print 'time used:',(time.clock()-start)
-            if iter_num<100:
-                pickle.dump((time.clock()-start),open('time/time'+str(iter_num)+'.txt','wb'))
-        pickle.dump(x_mean,open('x_mean.txt','wb'))
+            #if iter_num<100:
+            #    pickle.dump((time.clock()-start),open('time/time'+str(iter_num)+'.txt','wb'))
+        pickle.dump(x_mean,open('x_mean'+str(h[0,0])+'_'+str(h[1,0])+'.txt','wb'))
         z, K, clst_mean= ms_find_cluster_n(h, x_mean, self.X)
-        for i in range(num):
-            print z[i,:]
+        #cluster_plt(self.line_type,z,self.X[0:2,:].reshape((2,num)),self.K,'ms',x_mean[0:2,:])
 
         print 'Number of clusters is ', K
         Y=np.zeros((num,1))
