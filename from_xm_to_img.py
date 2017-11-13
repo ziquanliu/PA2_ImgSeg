@@ -6,6 +6,8 @@ import pa2 as fea_ex
 import pickle
 import scipy.io as scio
 pic='21077'
+pic_l=['12003','21077','56028','62096','101087','117054','187029','208001','227046','299086'
+       ,'310007','361010','361084','370036']
 
 img = Image.open('PA2-cluster-images/images/'+pic+'.jpg')
 pl.subplot(1, 3, 1)
@@ -16,7 +18,7 @@ X,L=fea_ex.getfeatures(img,7)
 num = X.shape[1]
 hp=10.0
 hc=4.0
-h=np.array([[hp],[hc]])
+#h=np.array([[hp],[hc]])
 x_mean=pickle.load(open(pic+'/x_mean_'+str(hp)+'_'+str(hc)+'_'+pic+'.txt','rb'))
 
 

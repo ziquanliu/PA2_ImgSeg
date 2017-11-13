@@ -271,7 +271,7 @@ class cluster(object):
 
         z = np.zeros((num, self.K))  # initialize z
         resid = 10
-        MIN_RES = 10 ** -2
+        MIN_RES = 10 ** -1
         pi_new = pi.copy()
         miu_new = miu.copy()
         Sigma_new = copy.copy(Sigma)
@@ -299,6 +299,7 @@ class cluster(object):
             for j in range(self.K):
                 pi_new[0, j] = N[0, j] / num
                 miu_new[:, j] = cal_new_miu(j, N[0, j], z, self.X)
+                print 'z:',z
                 Sigma_new[j] = cal_new_cov(j, N[0, j], z, self.X, miu_new[:, j])
                 # break
             # break
@@ -358,7 +359,7 @@ class cluster(object):
 
 
 class imgseg_cluster(cluster):
-    def __init__(self,X,K,l_type,true_label,lambdakm,hp,hc):
+    def __init__(self,X,K,l_type,true_label,lambdakm):
         cluster.__init__(self,X,K,l_type,true_label)
         self.lambda_km=lambdakm
 
